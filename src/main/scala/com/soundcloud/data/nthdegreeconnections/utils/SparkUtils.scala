@@ -12,11 +12,18 @@ object SparkUtils {
    * @return Spark Session
    */
   def createSparkSession(appName: String): SparkSession = {
-    SparkSession
+    val sparkSession = SparkSession
       .builder()
       .appName(appName)
       .master("local[*]")
       .getOrCreate()
+    val hadoopConfig = sparkSession.sparkContext.hadoopConfiguration
+
+    hadoopConfig.set("fs.hdfs.impl", classOf[org.apache.hadoop.hdfs.DistributedFileSystem].getName)
+
+    hadoopConfig.set("fs.file.impl", classOf[org.apache.hadoop.fs.LocalFileSystem].getName)
+
+    sparkSession
   }
 
   /**
@@ -36,10 +43,11 @@ object SparkUtils {
       schema: StructType
   ): DataFrame = {
     sparkSession.read
+      .format("csv")
       .option("delimiter", delimiter)
       .option("header", header)
       .schema(schema)
-      .csv(file)
+      .load(file)
   }
 
   /**
@@ -50,11 +58,16 @@ object SparkUtils {
    * @param delimiter Type of delimiter. "," or "\t"
    */
   def writeCSV(dataFrame: DataFrame, outputLocation: String, header: String, delimiter: String): Unit = {
-    dataFrame.write
+    dataFrame
+    // setting repartition as 1 as this is an exercise, but it will be an expensive operation if there is a lot of data.
+    // If we do not change the number of partitions, there will be multiple files, but data in each file will be sorted
+      .coalesce(1)
+      .write
+      .format("csv")
       .option("header", header)
       .option("delimiter", delimiter)
       .option("quote", "\u0000")
-      .csv(outputLocation)
+      .save(outputLocation)
   }
 
   /**
