@@ -55,7 +55,7 @@ object SparkUtils {
 
   def expandArrayColumns(dataFrame: DataFrame, column: String): DataFrame = {
     val maxArrayLen = dataFrame.withColumn("len", size(col(column))).selectExpr("max(len)").head().getInt(0)
-    val expandedDf  = dataFrame.select((0 until maxArrayLen).map(r => dataFrame.col("connection").getItem(r)): _*)
+    val expandedDf  = dataFrame.select((0 until maxArrayLen).map(r => dataFrame.col("connections").getItem(r)): _*)
     expandedDf
   }
 
