@@ -1,10 +1,12 @@
 package com.soundcloud.data.nthdegreeconnections
 
 import com.soundcloud.data.nthdegreeconnections.utils.NthDegreeConnectionUtils._
+import com.typesafe.scalalogging.LazyLogging
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success}
 
-object AppMain {
+object AppMain extends LazyLogging {
 
   def main(args: Array[String]): Unit = {
 
@@ -43,8 +45,13 @@ object AppMain {
     val outputFile = options("outputFile").asInstanceOf[String]
 
     val nthDegreeConnections = new NthDegreeConnections(createEdgesDataFrame(inputFile), degrees)
-    val nthDegreedf          = nthDegreeConnections.run()
-    writeNthDegreeConnDataFrame(nthDegreedf, outputFile)
+    nthDegreeConnections.run() match {
+      case Success(nthDegreedf) => writeNthDegreeConnDataFrame(nthDegreedf, outputFile)
+      case Failure(exception) =>
+        logger.error(s"Nth Degree calculation failed with exception ${exception.getMessage}")
+        sys.exit(1)
+    }
+
   }
 
 }

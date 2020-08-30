@@ -7,6 +7,8 @@ import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.scalatest.funspec.AnyFunSpec
 
+import scala.util.Success
+
 class MainSpec extends AnyFunSpec {
 
   var sparkSession: SparkSession = _
@@ -50,7 +52,10 @@ class MainSpec extends AnyFunSpec {
     val connectedComponents =
       new NthDegreeConnections(inputDf, degrees)
 
-    val nthDegreesdf: DataFrame = connectedComponents.run()
+    val nthDegreesdf = connectedComponents.run() match {
+      case Success(nthDegreesdf) =>
+        Right(nthDegreesdf).value
+    }
 
     it("should return the same number of output rows as number of distinct users in input") {
       assert(nthDegreesdf.count() === 7)
@@ -96,7 +101,6 @@ class MainSpec extends AnyFunSpec {
 
       assert("brendan,davidbowie,kim,mick,omid,torsten,ziggy" === connections)
     }
-
   }
 
   describe("Calculate 4th degree computations test") {
@@ -106,7 +110,10 @@ class MainSpec extends AnyFunSpec {
     val connectedComponents =
       new NthDegreeConnections(inputDf, degrees)
 
-    val nthDegreesdf: DataFrame = connectedComponents.run()
+    val nthDegreesdf = connectedComponents.run() match {
+      case Success(nthDegreesdf) =>
+        Right(nthDegreesdf).value
+    }
 
     it("should return the same number of output rows as number of distinct users in input") {
       assert(nthDegreesdf.count() === 7)
@@ -124,7 +131,6 @@ class MainSpec extends AnyFunSpec {
 
       assert("davidbowie,kim,omid,torsten,ziggy" === brendanConnections)
     }
-
   }
 
 }

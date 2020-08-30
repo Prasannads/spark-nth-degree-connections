@@ -6,39 +6,45 @@ import org.apache.spark.sql.functions.{array, array_except, col, collect_list}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success, Try}
 
 class NthDegreeConnections(val edgesDataFrame: DataFrame, val degrees: Int) extends Serializable with LazyLogging {
 
-  def run(): DataFrame = {
+  def run(): Try[DataFrame] = {
 
     /**
      * Swap users to create a complete set of connections.Because there can be
      * A -> B or B -> A but not both.
      * */
+    try {
+      val swappedEdgesDF: DataFrame =
+        edgesDataFrame.select(col("connection").alias("user"), col("user").alias("connection"))
+      val allEdgesDf: Dataset[Row] = edgesDataFrame.union(swappedEdgesDF)
 
-    val swappedEdgesDF: DataFrame =
-      edgesDataFrame.select(col("connection").alias("user"), col("user").alias("connection"))
-    val allEdgesDf: Dataset[Row] = edgesDataFrame.union(swappedEdgesDF)
+      // Add a column as an array with users (A,B) as they are 1st degree connections by default.
+      val allEdgesRefinedDf = allEdgesDf.withColumn("connections", array(col("user"), col("connection")))
 
-    // Add a column as an array with users (A,B) as they are 1st degree connections by default.
-    val allEdgesRefinedDf = allEdgesDf.withColumn("connections", array(col("user"), col("connection")))
+      // Recursive call on finding the Nth degree connection.
+      val calculatedDegreesdf = calculateDegreesRecursive(allEdgesRefinedDf, allEdgesDf)
 
-    // Recursive call on finding the Nth degree connection.
-    val calculatedDegreesdf = calculateDegreesRecursive(allEdgesRefinedDf, allEdgesDf)
+      // Post data cleaning and transformations.
+      val nthDegreedf = calculatedDegreesdf
+        .alias("v1")
+        // join is required on the same table here as we did swap of users and connections above.
+        .join(calculatedDegreesdf.alias("v2"), col("v1.user") === col("v2.connection"), "left")
+        .select(col("v1.user"), mergeSeq(col("v1.connections"), col("v2.connections")).alias("connections"))
+        .distinct()
+        .groupBy(col("v1.user"))
+        .agg(flattenSeq(collect_list(col("connections"))).alias("connections"))
+        .withColumn("connections", array_except(col("connections"), array("user")))
+        .orderBy(col("user"))
 
-    // Post data cleaning and transformations.
-    val nthDegreedf = calculatedDegreesdf
-      .alias("v1")
-      // join is required on the same table here as we did swap of users and connections above.
-      .join(calculatedDegreesdf.alias("v2"), col("v1.user") === col("v2.connection"), "left")
-      .select(col("v1.user"), mergeSeq(col("v1.connections"), col("v2.connections")).alias("connections"))
-      .distinct()
-      .groupBy(col("v1.user"))
-      .agg(flattenSeq(collect_list(col("connections"))).alias("connections"))
-      .withColumn("connections", array_except(col("connections"), array("user")))
-      .orderBy(col("user"))
-
-    nthDegreedf
+      Success(nthDegreedf)
+    } catch {
+      case exception: Exception =>
+        logger.error(s"exception: $exception")
+        Failure(exception)
+    }
   }
 
   /**
