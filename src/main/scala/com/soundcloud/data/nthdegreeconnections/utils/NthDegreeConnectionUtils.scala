@@ -21,8 +21,6 @@ object NthDegreeConnectionUtils {
   }
 
   def writeNthDegreeConnDataFrame(nthDegreedf: DataFrame, outputFile: String): Unit = {
-    //val finalNthDegreeConnections = expandArrayColumns(nthDegreedf, "connections").orderBy("user")
-
     val finalNthDegreeConnections =
       nthDegreedf
         .withColumn("connections", concat_ws("\t", mergeSeq(array(col("user")), col("connections"))))
