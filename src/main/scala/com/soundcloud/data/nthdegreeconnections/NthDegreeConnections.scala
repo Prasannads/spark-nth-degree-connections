@@ -2,7 +2,7 @@ package com.soundcloud.data.nthdegreeconnections
 
 import com.soundcloud.data.nthdegreeconnections.udfs.SparkUdfs._
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.spark.sql.functions.{array, array_except, col, collect_list, concat_ws}
+import org.apache.spark.sql.functions.{array, array_except, col, collect_list}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 
 import scala.annotation.tailrec

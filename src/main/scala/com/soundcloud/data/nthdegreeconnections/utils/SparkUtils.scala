@@ -1,7 +1,8 @@
 package com.soundcloud.data.nthdegreeconnections.utils
 
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{Column, DataFrame, SparkSession}
+import org.apache.spark.sql.functions.{col, size}
 
 object SparkUtils {
 
@@ -50,6 +51,12 @@ object SparkUtils {
    */
   def writeCSV(dataFrame: DataFrame, outputLocation: String, header: String, delimiter: String): Unit = {
     dataFrame.write.option("header", header).option("delimiter", delimiter).csv(outputLocation)
+  }
+
+  def expandArrayColumns(dataFrame: DataFrame, column: String): DataFrame = {
+    val maxArrayLen = dataFrame.withColumn("len", size(col(column))).selectExpr("max(len)").head().getInt(0)
+    val expandedDf  = dataFrame.select((0 until maxArrayLen).map(r => dataFrame.col("connection").getItem(r)): _*)
+    expandedDf
   }
 
 }

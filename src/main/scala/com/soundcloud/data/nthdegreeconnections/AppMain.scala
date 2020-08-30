@@ -1,6 +1,11 @@
 package com.soundcloud.data.nthdegreeconnections
 
-import com.soundcloud.data.nthdegreeconnections.utils.SparkUtils.{createSparkSession, readCSV, writeCSV}
+import com.soundcloud.data.nthdegreeconnections.utils.SparkUtils.{
+  createSparkSession,
+  expandArrayColumns,
+  readCSV,
+  writeCSV
+}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 
@@ -64,7 +69,9 @@ object AppMain {
   }
 
   private def writeNthDegreeConnDataFrame(nthDegreedf: DataFrame, outputFile: String): Unit = {
-    writeCSV(nthDegreedf, outputFile, "false", "\t")
+    val finalNthDegreeConnections = expandArrayColumns(nthDegreedf, "connections").orderBy("user")
+    finalNthDegreeConnections.show()
+    //writeCSV(finalNthDegreeConnections, outputFile, "false", "\t")
   }
 
 }
