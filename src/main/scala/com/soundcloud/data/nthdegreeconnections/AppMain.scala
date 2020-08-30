@@ -44,7 +44,6 @@ object AppMain {
 
     val nthDegreeConnections = new NthDegreeConnections(createEdgesDataFrame(inputFile), degrees)
     val nthDegreedf          = nthDegreeConnections.run()
-    nthDegreedf.show(false)
     writeNthDegreeConnDataFrame(nthDegreedf, outputFile)
   }
 

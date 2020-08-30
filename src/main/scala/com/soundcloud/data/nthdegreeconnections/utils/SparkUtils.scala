@@ -1,8 +1,8 @@
 package com.soundcloud.data.nthdegreeconnections.utils
 
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{Column, DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{col, size}
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object SparkUtils {
 
@@ -50,12 +50,24 @@ object SparkUtils {
    * @param delimiter Type of delimiter. "," or "\t"
    */
   def writeCSV(dataFrame: DataFrame, outputLocation: String, header: String, delimiter: String): Unit = {
-    dataFrame.write.option("header", header).option("delimiter", delimiter).csv(outputLocation)
+    dataFrame.write
+      .option("header", header)
+      .option("delimiter", delimiter)
+      .option("quote", "\u0000")
+      .csv(outputLocation)
   }
 
+  /**
+   * Expand Array column in to individual columns.
+   * @param dataFrame Input dataframe that has array column
+   * @param column Name of the array column.
+   * @return
+   */
   def expandArrayColumns(dataFrame: DataFrame, column: String): DataFrame = {
     val maxArrayLen = dataFrame.withColumn("len", size(col(column))).selectExpr("max(len)").head().getInt(0)
-    val expandedDf  = dataFrame.select((0 until maxArrayLen).map(r => dataFrame.col("connections").getItem(r)): _*)
+    val expandedDf =
+      dataFrame
+        .select((0 until maxArrayLen).map(r => dataFrame.col(column).getItem(r)): _*)
     expandedDf
   }
 

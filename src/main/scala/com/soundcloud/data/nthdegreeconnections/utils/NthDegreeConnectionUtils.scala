@@ -1,7 +1,9 @@
 package com.soundcloud.data.nthdegreeconnections.utils
 
-import com.soundcloud.data.nthdegreeconnections.utils.SparkUtils.{createSparkSession, expandArrayColumns, readCSV}
+import com.soundcloud.data.nthdegreeconnections.udfs.SparkUdfs.mergeSeq
+import com.soundcloud.data.nthdegreeconnections.utils.SparkUtils.{createSparkSession, readCSV, writeCSV}
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions.{array, col, concat_ws}
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 
 object NthDegreeConnectionUtils {
@@ -19,9 +21,13 @@ object NthDegreeConnectionUtils {
   }
 
   def writeNthDegreeConnDataFrame(nthDegreedf: DataFrame, outputFile: String): Unit = {
-    val finalNthDegreeConnections = expandArrayColumns(nthDegreedf, "connections").orderBy("user")
-    finalNthDegreeConnections.show()
-    //writeCSV(finalNthDegreeConnections, outputFile, "false", "\t")
+    //val finalNthDegreeConnections = expandArrayColumns(nthDegreedf, "connections").orderBy("user")
+
+    val finalNthDegreeConnections =
+      nthDegreedf
+        .withColumn("connections", concat_ws("\t", mergeSeq(array(col("user")), col("connections"))))
+        .drop("user")
+    writeCSV(finalNthDegreeConnections, outputFile, "false", "\t")
   }
 
 }
