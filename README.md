@@ -1,5 +1,6 @@
 # Nth degree connections
 
+[![Build Status](https://travis-ci.org/prasanna-ds/spark-nth-degree-connections.svg?branch=master)](https://travis-ci.org/prasanna-ds/spark-nth-degree-connections)
 
 ## How to Run
 
